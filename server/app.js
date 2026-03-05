@@ -182,7 +182,6 @@ app.get(`${API_BASE_PATH}/stream`, async (req, res, next) => {
     }
 });
 
-
 // --- Serve React Frontend (in production) ---
 if (NODE_ENV === 'production') {
     // Serve static files from the React build directory
@@ -225,10 +224,5 @@ app.use((error, req, res, next) => {
 // --- Start the Server ---
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT} in ${NODE_ENV} mode`);
-    console.log(`Access API at http://localhost:${PORT}${API_BASE_PATH}`);
-    if (NODE_ENV === 'production') {
-        console.log(`Serving React app from ${path.join(__dirname, '../client/build')}`);
-    }
+    console.log('Server started successfully');
 });
-
-module.exports = app;
