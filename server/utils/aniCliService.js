@@ -1,7 +1,7 @@
 const { spawn } = require('child_process');
 const path = require('path');
-const logger = require('./logger'); // Assuming a logger utility exists
-const config = require('../config'); // Assuming a config utility exists
+const logger = require('./logger');
+const config = require('../config');
 
 /**
  * Executes an ani-cli command and returns its stdout.
@@ -12,47 +12,46 @@ const config = require('../config'); // Assuming a config utility exists
  */
 async function executeAniCliCommand(args) {
   return new Promise((resolve, reject) => {
-    logger.info(`Executing ani-cli command with args: ${args.join(' ')}`);
+    try {
+      logger.info(`Executing ani-cli command with args: ${args.join(' ')}`);
 
-    // Determine the ani-cli executable path
-    // If ani-cli is globally installed, just 'ani-cli' might work.
-    // If it's expected to be in a specific local path (e.g., node_modules/.bin or a custom bin folder),
-    // adjust this path accordingly. For simplicity, we assume it's in the PATH or directly accessible.
-    const aniCliExecutable = config.get('aniCliExecutablePath') || 'ani-cli';
+      const aniCliExecutable = config.get('aniCliExecutablePath') || 'ani-cli';
 
-    const aniCliProcess = spawn(aniCliExecutable, args, {
-      // Ensure ani-cli can find its dependencies or config if needed
-      // cwd: path.join(__dirname, '..', '..'), // Example: set working directory
-      env: { ...process.env, ...config.get('aniCliEnvVars') }, // Pass additional environment variables
-    });
+      const aniCliProcess = spawn(aniCliExecutable, args, {
+        env: { ...process.env, ...config.get('aniCliEnvVars') },
+      });
 
-    let stdout = '';
-    let stderr = '';
+      let stdout = '';
+      let stderr = '';
 
-    aniCliProcess.stdout.on('data', (data) => {
-      stdout += data.toString();
-    });
+      aniCliProcess.stdout.on('data', (data) => {
+        stdout += data.toString();
+      });
 
-    aniCliProcess.stderr.on('data', (data) => {
-      stderr += data.toString();
-    });
+      aniCliProcess.stderr.on('data', (data) => {
+        stderr += data.toString();
+      });
 
-    aniCliProcess.on('close', (code) => {
-      if (code === 0) {
-        logger.info(`ani-cli command successful. Output length: ${stdout.length}`);
-        resolve(stdout.trim());
-      } else {
-        const errorMessage = `ani-cli command failed with code ${code}. Stderr: ${stderr.trim()}`;
-        logger.error(errorMessage);
+      aniCliProcess.on('close', (code) => {
+        if (code === 0) {
+          logger.info(`ani-cli command successful. Output length: ${stdout.length}`);
+          resolve(stdout.trim());
+        } else {
+          const errorMessage = `ani-cli command failed with code ${code}. Stderr: ${stderr.trim()}`;
+          logger.error(errorMessage);
+          reject(new Error(errorMessage));
+        }
+      });
+
+      aniCliProcess.on('error', (err) => {
+        const errorMessage = `Failed to start ani-cli process: ${err.message}`;
+        logger.error(errorMessage, err);
         reject(new Error(errorMessage));
-      }
-    });
-
-    aniCliProcess.on('error', (err) => {
-      const errorMessage = `Failed to start ani-cli process: ${err.message}`;
-      logger.error(errorMessage, err);
-      reject(new Error(errorMessage));
-    });
+      });
+    } catch (error) {
+      logger.error('Error executing ani-cli command:', error);
+      reject(error);
+    }
   });
 }
 
@@ -109,7 +108,7 @@ async function fetchStreamLink(animeId, episodeNumber) {
     throw new Error('Episode number must be a non-empty string.');
   }
   logger.debug(`Fetching stream link for anime ID: "${animeId}", episode: "${episodeNumber}"`);
-  return executeAniCliCommand(['-i', animeId, '-e', episodeNumber, '-o']); // '-o' for outputting only the URL
+  return executeAniCliCommand(['-i', animeId, '-e', episodeNumber, '-o']); 
 }
 
 module.exports = {
