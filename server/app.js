@@ -224,5 +224,16 @@ app.use((error, req, res, next) => {
 // --- Start the Server ---
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT} in ${NODE_ENV} mode`);
-    console.log('Server started successfully');
+    console.log(`Server URL: http://localhost:${PORT}`);
+});
+
+// Added a check to ensure the server is running
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    process.exit(1);
+});
+
+process.on('uncaughtException', (error) => {
+    console.error('Uncaught Exception:', error);
+    process.exit(1);
 });
