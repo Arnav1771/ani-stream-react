@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import './VideoPlayer.css'; // Assuming you'll create a CSS file for styling
+import './VideoPlayer.css';
 
 const VideoPlayer = ({ videoSource, onVideoEnd }) => {
   const videoRef = useRef(null);
@@ -13,21 +13,15 @@ const VideoPlayer = ({ videoSource, onVideoEnd }) => {
   const [showControls, setShowControls] = useState(true);
   const controlsTimeoutRef = useRef(null);
 
-  // Effect to handle video source changes
   useEffect(() => {
     if (videoRef.current && videoSource) {
       videoRef.current.src = videoSource;
-      videoRef.current.load(); // Load the new source
-      videoRef.current.then(() => {
-        videoRef.current.play().catch(error => console.error("Error playing video:", error));
-        setIsPlaying(true);
-      }).catch(error => {
-        console.error("Error loading video source:", error);
-      });
+      videoRef.current.load();
+      videoRef.current.play().catch(error => console.error("Error playing video:", error));
+      setIsPlaying(true);
     }
   }, [videoSource]);
 
-  // Event listeners for video element
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -54,7 +48,6 @@ const VideoPlayer = ({ videoSource, onVideoEnd }) => {
     };
     const handleError = (e) => {
       console.error("Video playback error:", e);
-      // You might want to display an error message to the user
     };
 
     video.addEventListener('play', handlePlay);
@@ -76,7 +69,6 @@ const VideoPlayer = ({ videoSource, onVideoEnd }) => {
     };
   }, [onVideoEnd]);
 
-  // Fullscreen event listener
   useEffect(() => {
     const handleFullScreenChange = () => {
       setIsFullScreen(!!document.fullscreenElement);
@@ -95,12 +87,11 @@ const VideoPlayer = ({ videoSource, onVideoEnd }) => {
     };
   }, []);
 
-  // Control visibility logic
   const hideControls = useCallback(() => {
     if (isPlaying) {
       controlsTimeoutRef.current = setTimeout(() => {
         setShowControls(false);
-      }, 3000); // Hide controls after 3 seconds of inactivity
+      }, 3000);
     }
   }, [isPlaying]);
 
@@ -115,12 +106,11 @@ const VideoPlayer = ({ videoSource, onVideoEnd }) => {
       hideControls();
     } else {
       clearTimeout(controlsTimeoutRef.current);
-      setShowControls(true); // Always show controls when paused
+      setShowControls(true);
     }
     return () => clearTimeout(controlsTimeoutRef.current);
   }, [isPlaying, hideControls]);
 
-  // Play/Pause toggle
   const togglePlayPause = () => {
     const video = videoRef.current;
     if (video) {
@@ -133,7 +123,6 @@ const VideoPlayer = ({ videoSource, onVideoEnd }) => {
     }
   };
 
-  // Seek video
   const handleSeek = (e) => {
     const video = videoRef.current;
     if (video) {
@@ -143,7 +132,6 @@ const VideoPlayer = ({ videoSource, onVideoEnd }) => {
     }
   };
 
-  // Volume control
   const handleVolumeChange = (e) => {
     const video = videoRef.current;
     if (video) {
@@ -158,163 +146,122 @@ const VideoPlayer = ({ videoSource, onVideoEnd }) => {
     }
   };
 
-  // Mute/Unmute toggle
   const toggleMute = () => {
     const video = videoRef.current;
     if (video) {
       video.muted = !video.muted;
       setIsMuted(video.muted);
       if (!video.muted && video.volume === 0) {
-        video.volume = 0.5; // Set a default volume if unmuting from 0
+        video.volume = 0.5;
         setVolume(0.5);
       }
     }
   };
 
-  // Fullscreen toggle
   const toggleFullScreen = () => {
     const playerContainer = playerContainerRef.current;
     if (playerContainer) {
       if (!document.fullscreenElement) {
         if (playerContainer.requestFullscreen) {
           playerContainer.requestFullscreen();
-        } else if (playerContainer.mozRequestFullScreen) { /* Firefox */
+        } else if (playerContainer.mozRequestFullScreen) {
           playerContainer.mozRequestFullScreen();
-        } else if (playerContainer.webkitRequestFullscreen) { /* Chrome, Safari & Opera */
+        } else if (playerContainer.webkitRequestFullscreen) {
           playerContainer.webkitRequestFullscreen();
-        } else if (playerContainer.msRequestFullscreen) { /* IE/Edge */
+        } else if (playerContainer.msRequestFullscreen) {
           playerContainer.msRequestFullscreen();
         }
       } else {
         if (document.exitFullscreen) {
           document.exitFullscreen();
-        } else if (document.mozCancelFullScreen) { /* Firefox */
+        } else if (document.mozCancelFullScreen) {
           document.mozCancelFullScreen();
-        } else if (document.webkitExitFullscreen) { /* Chrome, Safari and Opera */
+        } else if (document.webkitExitFullscreen) {
           document.webkitExitFullscreen();
-        } else if (document.msExitFullscreen) { /* IE/Edge */
+        } else if (document.msExitFullscreen) {
           document.msExitFullscreen();
         }
       }
     }
   };
 
-  // Format time for display
   const formatTime = (seconds) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = Math.floor(seconds % 60);
     return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
-  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
       const video = videoRef.current;
       if (!video) return;
 
       switch (e.key) {
-        case ' ': // Spacebar to play/pause
-          e.preventDefault(); // Prevent scrolling
+        case ' ':
+          e.preventDefault();
           togglePlayPause();
           break;
-        case 'ArrowRight': // Seek forward 5 seconds
+        case 'ArrowRight':
           video.currentTime = Math.min(video.currentTime + 5, video.duration);
           break;
-        case 'ArrowLeft': // Seek backward 5 seconds
+        case 'ArrowLeft':
           video.currentTime = Math.max(video.currentTime - 5, 0);
           break;
-        case 'ArrowUp': // Increase volume
+        case 'ArrowUp':
           video.volume = Math.min(video.volume + 0.1, 1);
           break;
-        case 'ArrowDown': // Decrease volume
+        case 'ArrowDown':
           video.volume = Math.max(video.volume - 0.1, 0);
-          break;
-        case 'm': // Mute/unmute
-          toggleMute();
-          break;
-        case 'f': // Fullscreen
-          toggleFullScreen();
-          break;
-        default:
           break;
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [togglePlayPause, toggleMute, toggleFullScreen]);
 
-  if (!videoSource) {
-    return (
-      <div className="video-player-container no-source">
-        <p>No video source provided. Please select an episode.</p>
-      </div>
-    );
-  }
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   return (
-    <div
-      ref={playerContainerRef}
-      className={`video-player-container ${isFullScreen ? 'fullscreen' : ''} ${showControls ? 'show-controls' : 'hide-controls'}`}
-      onMouseMove={showAndResetControls}
-      onMouseEnter={showAndResetControls}
-      onMouseLeave={hideControls}
-    >
-      <video
-        ref={videoRef}
-        className="video-element"
-        onClick={togglePlayPause}
-        onDoubleClick={toggleFullScreen}
-        preload="auto"
-        playsInline // Important for mobile browsers
-      >
+    <div ref={playerContainerRef} className="video-player">
+      <video ref={videoRef} className="video" onDoubleClick={toggleFullScreen}>
+        <source src={videoSource} type="video/mp4" />
         Your browser does not support the video tag.
       </video>
-
-      <div className="player-overlay" onClick={togglePlayPause}>
-        {!isPlaying && (
-          <div className="play-pause-overlay-icon">
-            <i className="fas fa-play"></i>
-          </div>
-        )}
-      </div>
-
-      <div className="video-controls">
-        <div className="progress-bar-container" onClick={handleSeek}>
-          <div className="progress-bar" style={{ width: `${progress}%` }}></div>
-        </div>
-
-        <div className="controls-bottom">
-          <button className="control-button" onClick={togglePlayPause}>
-            <i className={`fas ${isPlaying ? 'fa-pause' : 'fa-play'}`}></i>
+      {showControls && (
+        <div className="controls">
+          <button className="play-pause" onClick={togglePlayPause}>
+            {isPlaying ? 'Pause' : 'Play'}
           </button>
-
-          <div className="time-display">
-            <span>{formatTime(videoRef.current?.currentTime || 0)}</span> / <span>{formatTime(duration)}</span>
-          </div>
-
-          <div className="volume-control">
-            <button className="control-button" onClick={toggleMute}>
-              <i className={`fas ${isMuted || volume === 0 ? 'fa-volume-mute' : (volume > 0.5 ? 'fa-volume-up' : 'fa-volume-down')}`}></i>
-            </button>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              value={volume}
-              onChange={handleVolumeChange}
-              className="volume-slider"
-            />
-          </div>
-
-          <div className="spacer"></div> {/* Pushes fullscreen button to the right */}
-
-          <button className="control-button" onClick={toggleFullScreen}>
-            <i className={`fas ${isFullScreen ? 'fa-compress' : 'fa-expand'}`}></i>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={progress}
+            onChange={handleSeek}
+            className="progress"
+          />
+          <span className="time">
+            {formatTime(videoRef.current?.currentTime)} / {formatTime(duration)}
+          </span>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            value={volume}
+            onChange={handleVolumeChange}
+            className="volume"
+          />
+          <button className="mute" onClick={toggleMute}>
+            {isMuted ? 'Unmute' : 'Mute'}
+          </button>
+          <button className="fullscreen" onClick={toggleFullScreen}>
+            {isFullScreen ? 'Exit Fullscreen' : 'Fullscreen'}
           </button>
         </div>
-      </div>
+      )}
     </div>
   );
 };
