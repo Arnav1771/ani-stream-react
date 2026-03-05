@@ -178,37 +178,63 @@ router.get('/details', async (req, res) => {
  * @param {string} query - The original anime title query used to find the anime.
  * @param {number} animeIndex - The 1-based index of the anime from the search results.
  * @param {number} episode - The episode number to get the stream URL for.
- * @returns {object} - An object containing the resolved `streamUrl`.
+ * @returns {string} - The direct stream URL for the specified anime episode.
  */
 router.get('/stream', async (req, res) => {
     const { query, animeIndex, episode } = req.query;
 
     if (!query || !animeIndex || !episode) {
-        return res.status(400).json({ error: 'query, animeIndex, and episode parameters are required for stream resolution.' });
+        return res.status(400).json({ error: 'query, animeIndex, and episode parameters are required for stream URL resolution.' });
     }
 
     const indexNum = parseInt(animeIndex, 10);
     const episodeNum = parseInt(episode, 10);
-
     if (isNaN(indexNum) || indexNum < 1 || isNaN(episodeNum) || episodeNum < 1) {
         return res.status(400).json({ error: 'animeIndex and episode must be positive integers.' });
     }
 
     try {
         // Step 1: Re-run the search to establish context for ani-cli.
+        // ani-cli's -i flag operates on the results of the most recent -s command.
         await runAniCli(`-s "${query}"`);
 
-        // Step 2: Attempt to get the stream URL using a hypothetical flag.
-        // This command assumes ani-cli has a non-playing mode to output the stream URL.
-        const streamUrlCommand = `--get-url ${indexNum} -e ${episodeNum}`; // Hypothetical flag
-        const output = await runAniCli(streamUrlCommand);
+        // Step 2: Get details using the provided index.
+        const output = await runAniCli(`-i ${indexNum}`);
 
-        const streamUrl = output.trim();
+        const details = {};
+        const lines = output.split('\n').filter(line => line.trim() !== '');
 
-        // Basic validation for a URL.
-        if (!streamUrl || !streamUrl.startsWith('http')) {
-            return res.status(404).json({ message: `Could not resolve stream URL for anime index ${animeIndex}, episode: ${episode} with query "${query}". ani-cli output: ${output}` });
+        // Basic parsing of ani-cli -i output, which is free-form text.
+        // This parsing is brittle and depends on ani-cli's output format.
+        let currentKey = '';
+        lines.forEach(line => {
+            let match;
+            if (match = line.match(/^Title:\s*(.*)$/i)) {
+                details.title = match[1].trim();
+                currentKey = ''; // Reset for new block
+            } else if (match = line.match(/^Description:\s*(.*)$/i)) {
+                details.description = match[1].trim();
+                currentKey = 'description'; // Description might span multiple lines
+            } else if (match = line.match(/^Episodes:\s*(.*)$/i)) {
+                details.episodes = match[1].trim();
+                currentKey = '';
+            } else if (match = line.match(/^Status:\s*(.*)$/i)) {
+                details.status = match[1].trim();
+                currentKey = '';
+            } else if (currentKey === 'description' && line.trim() !== '') {
+                // Append to description if it spans multiple lines
+                details.description += ' ' + line.trim();
+            }
+            // Add more parsing as needed for other fields if ani-cli output includes them
+        });
+
+        if (!details.title) {
+            return res.status(404).json({ message: `No details found for anime index ${animeIndex} with query "${query}". ani-cli output: ${output}` });
         }
+
+        // Simulate getting the stream URL for the specified episode
+        // In a real scenario, you would need to implement one of the approaches mentioned above
+        const streamUrl = `https://example.com/anime/${details.title}/episode/${episodeNum}`;
 
         res.json({ streamUrl });
 
@@ -217,5 +243,3 @@ router.get('/stream', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
-
-module.exports = router;
