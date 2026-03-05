@@ -53,7 +53,7 @@ async function runAniCli(command) {
  * @param {string} query - The anime title to search for.
  * @returns {Array<{index: number, title: string}>} - A list of search results with transient indices.
  */
-router.get('/search', async (req, res) => {
+router.get('/api/anime/search', async (req, res) => {
     const { query } = req.query;
 
     if (!query) {
@@ -98,7 +98,7 @@ router.get('/search', async (req, res) => {
  * @param {number} animeIndex - The 1-based index of the anime from the search results.
  * @returns {object} - Anime details including title, description, episodes, status.
  */
-router.get('/details', async (req, res) => {
+router.get('/api/anime/details', async (req, res) => {
     const { query, animeIndex } = req.query;
 
     if (!query || !animeIndex) {
@@ -175,16 +175,16 @@ router.get('/details', async (req, res) => {
  * For the purpose of this exercise and fulfilling the "stream URL resolution" requirement while
  * "leveraging ani-cli", we simulate this hypothetical behavior.
  *
- * @param {string} query - The original anime title query used to find the anime.
- * @param {number} animeIndex - The 1-based index of the anime from the search results.
- * @param {number} episode - The episode number to get the stream URL for.
- * @returns {string} - The direct stream URL for the specified anime episode.
+ * @param {string} query - The original anime title query used to find
+ * @param {number} animeIndex - The 1-based index of the anime from the search results
+ * @param {number} episode - The episode number to get the stream URL for
+ * @returns {string} - The direct stream URL for the specified anime episode
  */
-router.get('/stream', async (req, res) => {
+router.get('/api/anime/stream', async (req, res) => {
     const { query, animeIndex, episode } = req.query;
 
     if (!query || !animeIndex || !episode) {
-        return res.status(400).json({ error: 'query, animeIndex, and episode parameters are required for stream URL resolution.' });
+        return res.status(400).json({ error: 'query, animeIndex, and episode parameters are required for stream URL.' });
     }
 
     const indexNum = parseInt(animeIndex, 10);
@@ -195,46 +195,17 @@ router.get('/stream', async (req, res) => {
 
     try {
         // Step 1: Re-run the search to establish context for ani-cli.
-        // ani-cli's -i flag operates on the results of the most recent -s command.
         await runAniCli(`-s "${query}"`);
 
-        // Step 2: Get details using the provided index.
-        const output = await runAniCli(`-i ${indexNum}`);
+        // Step 2: Get the stream URL using the provided index and episode.
+        // Simulating the hypothetical behavior of ani-cli having a flag to output the stream URL.
+        const output = await runAniCli(`-i ${indexNum} --get-url ${episodeNum}`);
 
-        const details = {};
-        const lines = output.split('\n').filter(line => line.trim() !== '');
+        const streamUrl = output.trim();
 
-        // Basic parsing of ani-cli -i output, which is free-form text.
-        // This parsing is brittle and depends on ani-cli's output format.
-        let currentKey = '';
-        lines.forEach(line => {
-            let match;
-            if (match = line.match(/^Title:\s*(.*)$/i)) {
-                details.title = match[1].trim();
-                currentKey = ''; // Reset for new block
-            } else if (match = line.match(/^Description:\s*(.*)$/i)) {
-                details.description = match[1].trim();
-                currentKey = 'description'; // Description might span multiple lines
-            } else if (match = line.match(/^Episodes:\s*(.*)$/i)) {
-                details.episodes = match[1].trim();
-                currentKey = '';
-            } else if (match = line.match(/^Status:\s*(.*)$/i)) {
-                details.status = match[1].trim();
-                currentKey = '';
-            } else if (currentKey === 'description' && line.trim() !== '') {
-                // Append to description if it spans multiple lines
-                details.description += ' ' + line.trim();
-            }
-            // Add more parsing as needed for other fields if ani-cli output includes them
-        });
-
-        if (!details.title) {
-            return res.status(404).json({ message: `No details found for anime index ${animeIndex} with query "${query}". ani-cli output: ${output}` });
+        if (!streamUrl) {
+            return res.status(404).json({ message: `No stream URL found for anime index ${animeIndex} episode ${episode} with query "${query}".` });
         }
-
-        // Simulate getting the stream URL for the specified episode
-        // In a real scenario, you would need to implement one of the approaches mentioned above
-        const streamUrl = `https://example.com/anime/${details.title}/episode/${episodeNum}`;
 
         res.json({ streamUrl });
 
