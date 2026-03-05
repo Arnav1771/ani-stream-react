@@ -4,7 +4,7 @@ import AnimeCard from '../components/AnimeCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 import SearchBar from '../components/SearchBar';
-import { fetchTrendingAnime, fetchRecentAnime } from '../api/animeApi'; // Assuming these functions exist
+import { fetchTrendingAnime, fetchRecentAnime } from '../api/animeApi';
 
 const HomePage = () => {
   const [trendingAnime, setTrendingAnime] = useState([]);
@@ -29,7 +29,7 @@ const HomePage = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fetchTrendingAnime, fetchRecentAnime]);
 
   useEffect(() => {
     loadAnimeData();
