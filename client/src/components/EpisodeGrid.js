@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import './EpisodeGrid.css'; // Assuming you'll create this CSS file
+import './EpisodeGrid.css';
 
 /**
  * EpisodeGrid component displays a list of episodes as a clickable, numbered text grid.
@@ -27,9 +27,9 @@ function EpisodeGrid({ episodes, selectedEpisode, onEpisodeSelect, isLoading }) 
         <p className="no-episodes-message">No episodes found for this anime.</p>
       ) : (
         <div className="episode-grid">
-          {episodes.map((episodeNumber) => (
+          {episodes.map((episodeNumber, index) => (
             <button
-              key={episodeNumber}
+              key={index}
               className={`episode-grid-item ${selectedEpisode === episodeNumber ? 'selected' : ''}`}
               onClick={() => onEpisodeSelect(episodeNumber)}
               aria-label={`Episode ${episodeNumber}`}
