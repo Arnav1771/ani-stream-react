@@ -66,7 +66,7 @@ async function searchAnime(query) {
     throw new Error('Search query must be a non-empty string.');
   }
   logger.debug(`Searching for anime: "${query}"`);
-  return executeAniCliCommand(['-s', query]);
+  return executeAniCliCommandWithRetry(['-s', query]);
 }
 
 /**
@@ -90,7 +90,7 @@ async function fetchAnimeDetails(animeId, episodeNumber = null) {
     logger.debug(`Fetching details for anime ID: "${animeId}" (listing episodes)`);
   }
 
-  return executeAniCliCommand(args);
+  return executeAniCliCommandWithRetry(args);
 }
 
 /**
@@ -108,7 +108,35 @@ async function fetchStreamLink(animeId, episodeNumber) {
     throw new Error('Episode number must be a non-empty string.');
   }
   logger.debug(`Fetching stream link for anime ID: "${animeId}", episode: "${episodeNumber}"`);
-  return executeAniCliCommand(['-i', animeId, '-e', episodeNumber, '-o']); 
+  return executeAniCliCommandWithRetry(['-i', animeId, '-e', episodeNumber, '-o']);
+}
+
+/**
+ * Executes an ani-cli command with retry mechanism for 429 RESOURCE_EXHAUSTED error.
+ *
+ * @param {string[]} args - An array of arguments to pass to ani-cli.
+ * @param {number} [retryCount=0] - The current retry count.
+ * @param {number} [retryDelay=1000] - The delay between retries in milliseconds.
+ * @returns {Promise<string>} A promise that resolves with the stdout of the ani-cli command.
+ */
+async function executeAniCliCommandWithRetry(args, retryCount = 0, retryDelay = 1000) {
+  try {
+    const result = await executeAniCliCommand(args);
+    return result;
+  } catch (error) {
+    if (error.message.includes('429 RESOURCE_EXHAUSTED')) {
+      if (retryCount < 5) {
+        logger.warn(`Retry ${retryCount + 1} for 429 RESOURCE_EXHAUSTED error. Delay: ${retryDelay}ms`);
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+        return executeAniCliCommandWithRetry(args, retryCount + 1, retryDelay * 2);
+      } else {
+        logger.error('Max retries exceeded for 429 RESOURCE_EXHAUSTED error.');
+        throw error;
+      }
+    } else {
+      throw error;
+    }
+  }
 }
 
 module.exports = {
