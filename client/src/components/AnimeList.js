@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import './AnimeList.css'; // Assuming a CSS file for styling
+import './AnimeList.css';
 
 /**
  * AnimeList Component
@@ -49,7 +49,7 @@ const AnimeList = ({ title, animeItems, onAnimeSelect, isLoading, error }) => {
       <div className="anime-grid">
         {animeItems.map((anime) => (
           <div
-            key={anime.animeId} // Use a unique ID for the key
+            key={anime.animeId} 
             className="anime-card"
             onClick={() => onAnimeSelect(anime)}
             role="button"
@@ -62,13 +62,12 @@ const AnimeList = ({ title, animeItems, onAnimeSelect, isLoading, error }) => {
             }}
           >
             <div className="anime-card-image-container">
-              {/* Fallback image if posterUrl is not available or fails to load */}
               <img
                 src={anime.posterUrl || 'https://via.placeholder.com/150x225?text=No+Image'}
                 alt={anime.title}
                 className="anime-card-image"
                 onError={(e) => {
-                  e.target.onerror = null; // Prevent infinite loop
+                  e.target.onerror = null; 
                   e.target.src = 'https://via.placeholder.com/150x225?text=No+Image';
                 }}
               />
@@ -86,24 +85,18 @@ const AnimeList = ({ title, animeItems, onAnimeSelect, isLoading, error }) => {
 };
 
 AnimeList.propTypes = {
-  /** The title for the list section (e.g., "Trending Anime", "Search Results") */
   title: PropTypes.string.isRequired,
-  /** An array of anime objects to display */
   animeItems: PropTypes.arrayOf(
     PropTypes.shape({
-      animeId: PropTypes.string.isRequired, // Unique ID for the anime
+      animeId: PropTypes.string.isRequired, 
       title: PropTypes.string.isRequired,
-      posterUrl: PropTypes.string, // URL to the anime's poster image
-      releaseDate: PropTypes.string, // Optional release date
-      status: PropTypes.string, // Optional status (e.g., "Ongoing", "Completed")
-      // Add other relevant anime properties as needed
+      posterUrl: PropTypes.string, 
+      releaseDate: PropTypes.string, 
+      status: PropTypes.string, 
     })
   ),
-  /** Callback function when an anime item is selected */
   onAnimeSelect: PropTypes.func.isRequired,
-  /** Boolean to indicate if the data is currently loading */
   isLoading: PropTypes.bool,
-  /** Error message string if an error occurred during data fetching */
   error: PropTypes.string,
 };
 
