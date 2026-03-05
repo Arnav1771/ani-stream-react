@@ -4,7 +4,7 @@ import axios from 'axios';
 import { FaPlayCircle, FaSpinner, FaArrowLeft, FaDownload, FaExpand, FaCompress } from 'react-icons/fa';
 import { MdOutlineErrorOutline } from 'react-icons/md';
 import { useMediaQuery } from 'react-responsive';
-import './AnimeDetailPage.css'; // Assuming you'll create this CSS file
+import './AnimeDetailPage.css';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
 
@@ -28,7 +28,6 @@ const AnimeDetailPage = () => {
   const playerContainerRef = useRef(null);
   const [isFullScreen, setIsFullScreen] = useState(false);
 
-  // Fetch anime details
   useEffect(() => {
     const fetchAnimeDetails = async () => {
       setLoadingDetails(true);
@@ -47,14 +46,12 @@ const AnimeDetailPage = () => {
     fetchAnimeDetails();
   }, [animeId]);
 
-  // Fetch episodes
   useEffect(() => {
     const fetchEpisodes = async () => {
       setLoadingEpisodes(true);
       try {
         const response = await axios.get(`${API_BASE_URL}/anime/${animeId}/episodes`);
         setEpisodes(response.data);
-        // Automatically select the first episode if available
         if (response.data.length > 0) {
           setSelectedEpisode(response.data[0]);
         }
@@ -69,7 +66,6 @@ const AnimeDetailPage = () => {
     fetchEpisodes();
   }, [animeId]);
 
-  // Fetch video URL for selected episode
   useEffect(() => {
     const fetchVideoUrl = async () => {
       if (!selectedEpisode) {
@@ -79,7 +75,7 @@ const AnimeDetailPage = () => {
 
       setLoadingVideo(true);
       setVideoError(null);
-      setVideoUrl(''); // Clear previous video URL
+      setVideoUrl(''); 
       try {
         const response = await axios.get(`${API_BASE_URL}/anime/${animeId}/episode/${selectedEpisode.episodeNumber}/stream`);
         setVideoUrl(response.data.streamUrl);
@@ -99,14 +95,12 @@ const AnimeDetailPage = () => {
   };
 
   const handleGoBack = () => {
-    navigate(-1); // Go back to the previous page
+    navigate(-1); 
   };
 
   const handleDownload = () => {
     if (selectedEpisode) {
-      // Construct the download URL for the backend
       const downloadUrl = `${API_BASE_URL}/anime/${animeId}/episode/${selectedEpisode.episodeNumber}/download`;
-      // Open in a new tab to trigger download
       window.open(downloadUrl, '_blank');
     }
   };
@@ -190,12 +184,12 @@ const AnimeDetailPage = () => {
           {videoUrl && !loadingVideo && !videoError ? (
             <video
               ref={videoRef}
-              key={videoUrl} // Key change forces re-render and re-load of video
+              key={videoUrl} 
               controls
               autoPlay
               className="anime-video-player"
-              poster={animeDetails?.image} // Use anime image as poster
-              onContextMenu={(e) => e.preventDefault()} // Disable right-click context menu
+              poster={animeDetails?.image} 
+              onContextMenu={(e) => e.preventDefault()} 
             >
               <source src={videoUrl} type="video/mp4" />
               Your browser does not support the video tag.
@@ -223,43 +217,22 @@ const AnimeDetailPage = () => {
                 <div className="details-text">
                   <h2>{animeDetails.title}</h2>
                   <p className="anime-description">{animeDetails.description}</p>
-                  <div className="anime-meta">
-                    {animeDetails.genres && <p><strong>Genres:</strong> {animeDetails.genres.join(', ')}</p>}
-                    {animeDetails.releaseDate && <p><strong>Release Date:</strong> {animeDetails.releaseDate}</p>}
-                    {animeDetails.status && <p><strong>Status:</strong> {animeDetails.status}</p>}
-                    {animeDetails.type && <p><strong>Type:</strong> {animeDetails.type}</p>}
+                  <div className="episode-list">
+                    {episodes.map((episode) => (
+                      <button
+                        key={episode.episodeNumber}
+                        className={`episode-button ${selectedEpisode?.episodeNumber === episode.episodeNumber ? 'selected' : ''}`}
+                        onClick={() => handleEpisodeSelect(episode)}
+                      >
+                        Episode {episode.episodeNumber}
+                      </button>
+                    ))}
                   </div>
-                  {selectedEpisode && (
-                    <button onClick={handleDownload} className="download-button">
-                      <FaDownload /> Download Episode {selectedEpisode.episodeNumber}
-                    </button>
-                  )}
+                  <button onClick={handleDownload} className="download-button">
+                    <FaDownload /> Download
+                  </button>
                 </div>
               </>
-            )}
-          </div>
-
-          <div className="episode-list-card">
-            <h3>Episodes</h3>
-            {loadingEpisodes ? (
-              <div className="loading-container small">
-                <FaSpinner className="spinner" />
-                <p>Loading episodes...</p>
-              </div>
-            ) : episodes.length > 0 ? (
-              <ul className="episode-list">
-                {episodes.map((episode) => (
-                  <li
-                    key={episode.episodeNumber}
-                    className={`episode-item ${selectedEpisode?.episodeNumber === episode.episodeNumber ? 'selected' : ''}`}
-                    onClick={() => handleEpisodeSelect(episode)}
-                  >
-                    Episode {episode.episodeNumber}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="no-episodes">No episodes found for this anime.</p>
             )}
           </div>
         </div>
