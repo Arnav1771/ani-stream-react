@@ -4,7 +4,7 @@ import Home from './pages/Home';
 import Search from './pages/Search';
 import Watch from './pages/Watch';
 import NotFound from './pages/NotFound';
-import './App.css'; // Main application styles
+import './App.css'; 
 
 function App() {
   return (
@@ -31,7 +31,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/search" element={<Search />} />
             <Route path="/watch/:animeId/:episodeId" element={<Watch />} />
-            <Route path="*" element={<NotFound />} /> {/* Catch-all for unknown routes */}
+            <Route path="*" element={<NotFound />} /> 
           </Routes>
         </main>
 
