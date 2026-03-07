@@ -1,17 +1,13 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { FaPlayCircle, FaSpinner, FaArrowLeft, FaDownload, FaExpand, FaCompress } from 'react-icons/fa';
-import { MdOutlineErrorOutline } from 'react-icons/md';
-import { useMediaQuery } from 'react-responsive';
+import { fetchAnimeDetails, fetchAnimeEpisodes, fetchEpisodeStreamUrl } from '../services/api';
 import './AnimeDetailPage.css';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000/api';
 
 const AnimeDetailPage = () => {
   const { animeId } = useParams();
   const navigate = useNavigate();
-  const isMobile = useMediaQuery({ query: '(max-width: 768px)' });
 
   const [animeDetails, setAnimeDetails] = useState(null);
   const [episodes, setEpisodes] = useState([]);
@@ -21,6 +17,7 @@ const AnimeDetailPage = () => {
 
   const [selectedEpisode, setSelectedEpisode] = useState(null);
   const [videoUrl, setVideoUrl] = useState('');
+  const [streamingServices, setStreamingServices] = useState([]);
   const [loadingVideo, setLoadingVideo] = useState(false);
   const [videoError, setVideoError] = useState(null);
 
@@ -29,12 +26,12 @@ const AnimeDetailPage = () => {
   const [isFullScreen, setIsFullScreen] = useState(false);
 
   useEffect(() => {
-    const fetchAnimeDetails = async () => {
+    const loadDetails = async () => {
       setLoadingDetails(true);
       setError(null);
       try {
-        const response = await axios.get(`${API_BASE_URL}/anime/${animeId}`);
-        setAnimeDetails(response.data);
+        const data = await fetchAnimeDetails(animeId);
+        setAnimeDetails(data);
       } catch (err) {
         console.error('Error fetching anime details:', err);
         setError('Failed to load anime details. Please try again.');
@@ -43,17 +40,17 @@ const AnimeDetailPage = () => {
       }
     };
 
-    fetchAnimeDetails();
+    loadDetails();
   }, [animeId]);
 
   useEffect(() => {
-    const fetchEpisodes = async () => {
+    const loadEpisodes = async () => {
       setLoadingEpisodes(true);
       try {
-        const response = await axios.get(`${API_BASE_URL}/anime/${animeId}/episodes`);
-        setEpisodes(response.data);
-        if (response.data.length > 0) {
-          setSelectedEpisode(response.data[0]);
+        const data = await fetchAnimeEpisodes(animeId);
+        setEpisodes(data);
+        if (data.length > 0) {
+          setSelectedEpisode(data[0]);
         }
       } catch (err) {
         console.error('Error fetching episodes:', err);
@@ -63,11 +60,11 @@ const AnimeDetailPage = () => {
       }
     };
 
-    fetchEpisodes();
+    loadEpisodes();
   }, [animeId]);
 
   useEffect(() => {
-    const fetchVideoUrl = async () => {
+    const loadVideoUrl = async () => {
       if (!selectedEpisode) {
         setVideoUrl('');
         return;
@@ -75,10 +72,10 @@ const AnimeDetailPage = () => {
 
       setLoadingVideo(true);
       setVideoError(null);
-      setVideoUrl(''); 
+      setVideoUrl('');
       try {
-        const response = await axios.get(`${API_BASE_URL}/anime/${animeId}/episode/${selectedEpisode.episodeNumber}/stream`);
-        setVideoUrl(response.data.streamUrl);
+        const streamUrl = await fetchEpisodeStreamUrl(animeId, selectedEpisode.episodeNumber);
+        setVideoUrl(streamUrl || '');
       } catch (err) {
         console.error('Error fetching video URL:', err);
         setVideoError('Failed to load video. Please try again or try a different episode.');
@@ -87,7 +84,7 @@ const AnimeDetailPage = () => {
       }
     };
 
-    fetchVideoUrl();
+    loadVideoUrl();
   }, [animeId, selectedEpisode]);
 
   const handleEpisodeSelect = (episode) => {
@@ -95,14 +92,7 @@ const AnimeDetailPage = () => {
   };
 
   const handleGoBack = () => {
-    navigate(-1); 
-  };
-
-  const handleDownload = () => {
-    if (selectedEpisode) {
-      const downloadUrl = `${API_BASE_URL}/anime/${animeId}/episode/${selectedEpisode.episodeNumber}/download`;
-      window.open(downloadUrl, '_blank');
-    }
+    navigate(-1);
   };
 
   const handleFullScreenToggle = useCallback(() => {
@@ -123,22 +113,15 @@ const AnimeDetailPage = () => {
     };
 
     document.addEventListener('fullscreenchange', handleFullScreenChange);
-    document.addEventListener('webkitfullscreenchange', handleFullScreenChange);
-    document.addEventListener('mozfullscreenchange', handleFullScreenChange);
-    document.addEventListener('MSFullscreenChange', handleFullScreenChange);
-
     return () => {
       document.removeEventListener('fullscreenchange', handleFullScreenChange);
-      document.removeEventListener('webkitfullscreenchange', handleFullScreenChange);
-      document.removeEventListener('mozfullscreenchange', handleFullScreenChange);
-      document.removeEventListener('MSFullscreenChange', handleFullScreenChange);
     };
   }, []);
 
   if (loadingDetails && loadingEpisodes) {
     return (
       <div className="loading-container">
-        <FaSpinner className="spinner" />
+        <div className="spinner"></div>
         <p>Loading anime details...</p>
       </div>
     );
@@ -147,10 +130,10 @@ const AnimeDetailPage = () => {
   if (error) {
     return (
       <div className="error-container">
-        <MdOutlineErrorOutline className="error-icon" />
+        <p className="error-icon">⚠️</p>
         <p>{error}</p>
         <button onClick={handleGoBack} className="back-button">
-          <FaArrowLeft /> Go Back
+          ← Go Back
         </button>
       </div>
     );
@@ -160,7 +143,7 @@ const AnimeDetailPage = () => {
     <div className={`anime-detail-page ${isFullScreen ? 'fullscreen-active' : ''}`}>
       <div className="detail-header">
         <button onClick={handleGoBack} className="back-button">
-          <FaArrowLeft /> Back to Search
+          ← Back
         </button>
         {animeDetails && (
           <h1 className="anime-title">{animeDetails.title}</h1>
@@ -171,40 +154,50 @@ const AnimeDetailPage = () => {
         <div className={`video-player-section ${isFullScreen ? 'fullscreen' : ''}`} ref={playerContainerRef}>
           {loadingVideo && (
             <div className="video-overlay loading-overlay">
-              <FaSpinner className="spinner" />
+              <div className="spinner"></div>
               <p>Loading video...</p>
             </div>
           )}
           {videoError && !loadingVideo && (
             <div className="video-overlay error-overlay">
-              <MdOutlineErrorOutline className="error-icon" />
-              <p>{videoError}</p>
+              <p>⚠️ {videoError}</p>
             </div>
           )}
           {videoUrl && !loadingVideo && !videoError ? (
-            <video
-              ref={videoRef}
-              key={videoUrl} 
-              controls
-              autoPlay
-              className="anime-video-player"
-              poster={animeDetails?.image} 
-              onContextMenu={(e) => e.preventDefault()} 
-            >
-              <source src={videoUrl} type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
+            videoUrl.includes('youtube') || videoUrl.includes('youtu.be') ? (
+              <iframe
+                src={videoUrl}
+                title="Anime Trailer"
+                className="anime-video-player"
+                allowFullScreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                style={{ width: '100%', height: '100%', border: 'none', minHeight: '400px' }}
+              ></iframe>
+            ) : (
+              <video
+                ref={videoRef}
+                key={videoUrl}
+                controls
+                autoPlay
+                className="anime-video-player"
+                poster={animeDetails?.image}
+                onContextMenu={(e) => e.preventDefault()}
+              >
+                <source src={videoUrl} type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+            )
           ) : (
             !loadingVideo && !videoError && (
               <div className="video-placeholder">
-                <FaPlayCircle className="play-icon" />
+                <p style={{ fontSize: '3rem' }}>▶</p>
                 <p>Select an episode to start watching</p>
               </div>
             )
           )}
           <div className="player-controls-overlay">
             <button onClick={handleFullScreenToggle} className="fullscreen-toggle-button">
-              {isFullScreen ? <FaCompress /> : <FaExpand />}
+              {isFullScreen ? '⊘' : '⊕'}
             </button>
           </div>
         </div>
@@ -217,6 +210,12 @@ const AnimeDetailPage = () => {
                 <div className="details-text">
                   <h2>{animeDetails.title}</h2>
                   <p className="anime-description">{animeDetails.description}</p>
+                  {animeDetails.status && <p><strong>Status:</strong> {animeDetails.status}</p>}
+                  {animeDetails.episodes > 0 && <p><strong>Episodes:</strong> {animeDetails.episodes}</p>}
+                  {animeDetails.score > 0 && <p><strong>Score:</strong> ★ {animeDetails.score}</p>}
+                  {animeDetails.genres && animeDetails.genres.length > 0 && (
+                    <p><strong>Genres:</strong> {animeDetails.genres.join(', ')}</p>
+                  )}
                   <div className="episode-list">
                     {episodes.map((episode) => (
                       <button
@@ -224,13 +223,10 @@ const AnimeDetailPage = () => {
                         className={`episode-button ${selectedEpisode?.episodeNumber === episode.episodeNumber ? 'selected' : ''}`}
                         onClick={() => handleEpisodeSelect(episode)}
                       >
-                        Episode {episode.episodeNumber}
+                        Ep {episode.episodeNumber}
                       </button>
                     ))}
                   </div>
-                  <button onClick={handleDownload} className="download-button">
-                    <FaDownload /> Download
-                  </button>
                 </div>
               </>
             )}

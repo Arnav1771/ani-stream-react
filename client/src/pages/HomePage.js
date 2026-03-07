@@ -29,7 +29,7 @@ const HomePage = () => {
     } finally {
       setLoading(false);
     }
-  }, [fetchTrendingAnime, fetchRecentAnime]);
+  }, []);
 
   useEffect(() => {
     loadAnimeData();
