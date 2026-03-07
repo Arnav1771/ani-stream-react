@@ -37,7 +37,7 @@ function App() {
 
         <footer className="app-footer">
           <p>&copy; {new Date().getFullYear()} AniStream. All rights reserved.</p>
-          <p>Powered by <a href="https://github.com/pystardust/ani-cli" target="_blank" rel="noopener noreferrer">ani-cli</a></p>
+          <p>Powered by <a href="https://jikan.moe/" target="_blank" rel="noopener noreferrer">Jikan API</a> (MyAnimeList)</p>
         </footer>
       </div>
     </Router>

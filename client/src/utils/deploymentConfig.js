@@ -1,5 +1,5 @@
 export const DEPLOYMENT_CONFIG = {
-  API_URL: process.env.REACT_APP_API_URL || 'http://localhost:3001',
+  API_URL: process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000/api',
   CLIENT_URL: process.env.REACT_APP_CLIENT_URL || 'http://localhost:3000',
   ENVIRONMENT: process.env.REACT_APP_ENVIRONMENT || 'development',
   DEPLOYMENT_MODE: process.env.REACT_APP_DEPLOYMENT_MODE || 'local',
