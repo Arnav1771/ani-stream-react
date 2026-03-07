@@ -96,6 +96,7 @@ async function fetchAnimeEpisodes(animeId, page = 1) {
   }
   const data = await jikanRequest(`/anime/${animeId}/episodes?page=${page}`);
   return (data.data || []).map((ep) => ({
+    // Jikan's mal_id for episodes is the episode number (1, 2, 3, etc.)
     episodeNumber: ep.mal_id,
     title: ep.title || `Episode ${ep.mal_id}`,
     titleJapanese: ep.title_japanese || '',

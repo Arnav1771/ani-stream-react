@@ -1,2 +1,56 @@
-# Error generating this file
-# 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 59.389350586s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.5-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '59s'}]}}
+# How to Run AniStream
+
+## Quick Start
+
+### 1. Install Dependencies
+
+```bash
+# Install server dependencies
+cd server
+npm install
+
+# Install client dependencies
+cd ../client
+npm install
+```
+
+### 2. Start the Backend
+
+```bash
+cd server
+npm run dev
+```
+
+The server starts on port 5000 by default.
+
+### 3. Start the Frontend
+
+In a separate terminal:
+
+```bash
+cd client
+npm start
+```
+
+The React app opens at `http://localhost:3000`.
+
+### 4. Open the App
+
+Navigate to `http://localhost:3000` in your browser. You can:
+- Browse trending and recent anime on the home page
+- Search for anime using the search bar
+- View anime details and episode listings
+- Watch trailers via the built-in video player
+
+## Production Build
+
+```bash
+cd client
+npm run build
+
+cd ../server
+NODE_ENV=production npm start
+```
+
+The server will serve both the API and the React build at `http://localhost:5000`.
+
