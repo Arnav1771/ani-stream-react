@@ -3,6 +3,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { fetchAnimeDetails, fetchAnimeEpisodes, fetchEpisodeStreamUrl } from '../services/api';
 import './AnimeDetailPage.css';
 
+/**
+ * Checks if a URL is a YouTube URL (regular or embed).
+ */
+function isYouTubeUrl(url) {
+  return url.includes('youtube') || url.includes('youtu.be');
+}
+
 const AnimeDetailPage = () => {
   const { animeId } = useParams();
   const navigate = useNavigate();
@@ -161,7 +168,7 @@ const AnimeDetailPage = () => {
             </div>
           )}
           {videoUrl && !loadingVideo && !videoError ? (
-            videoUrl.includes('youtube') || videoUrl.includes('youtu.be') ? (
+            isYouTubeUrl(videoUrl) ? (
               <iframe
                 src={videoUrl}
                 title="Anime Trailer"
