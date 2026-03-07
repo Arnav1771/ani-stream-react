@@ -1,14 +1,8 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { fetchAnimeDetails, fetchAnimeEpisodes, fetchEpisodeStreamUrl } from '../services/api';
+import { fetchAnimeDetails, fetchAnimeEpisodes } from '../services/api';
+import StreamingVideoPlayer from '../components/StreamingVideoPlayer';
 import './AnimeDetailPage.css';
-
-/**
- * Checks if a URL is a YouTube URL (regular or embed).
- */
-function isYouTubeUrl(url) {
-  return url.includes('youtube') || url.includes('youtu.be');
-}
 
 const AnimeDetailPage = () => {
   const { animeId } = useParams();
@@ -19,15 +13,8 @@ const AnimeDetailPage = () => {
   const [loadingDetails, setLoadingDetails] = useState(true);
   const [loadingEpisodes, setLoadingEpisodes] = useState(true);
   const [error, setError] = useState(null);
-
   const [selectedEpisode, setSelectedEpisode] = useState(null);
-  const [videoUrl, setVideoUrl] = useState('');
-  const [loadingVideo, setLoadingVideo] = useState(false);
   const [videoError, setVideoError] = useState(null);
-
-  const videoRef = useRef(null);
-  const playerContainerRef = useRef(null);
-  const [isFullScreen, setIsFullScreen] = useState(false);
 
   useEffect(() => {
     const loadDetails = async () => {
@@ -67,60 +54,14 @@ const AnimeDetailPage = () => {
     loadEpisodes();
   }, [animeId]);
 
-  useEffect(() => {
-    const loadVideoUrl = async () => {
-      if (!selectedEpisode) {
-        setVideoUrl('');
-        return;
-      }
-
-      setLoadingVideo(true);
-      setVideoError(null);
-      setVideoUrl('');
-      try {
-        const streamUrl = await fetchEpisodeStreamUrl(animeId, selectedEpisode.episodeNumber);
-        setVideoUrl(streamUrl || '');
-      } catch (err) {
-        console.error('Error fetching video URL:', err);
-        setVideoError('Failed to load video. Please try again or try a different episode.');
-      } finally {
-        setLoadingVideo(false);
-      }
-    };
-
-    loadVideoUrl();
-  }, [animeId, selectedEpisode]);
-
   const handleEpisodeSelect = (episode) => {
     setSelectedEpisode(episode);
+    setVideoError(null); // Clear any previous errors
   };
 
   const handleGoBack = () => {
     navigate(-1);
   };
-
-  const handleFullScreenToggle = useCallback(() => {
-    if (!playerContainerRef.current) return;
-
-    if (!document.fullscreenElement) {
-      playerContainerRef.current.requestFullscreen().catch(err => {
-        console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
-      });
-    } else {
-      document.exitFullscreen();
-    }
-  }, []);
-
-  useEffect(() => {
-    const handleFullScreenChange = () => {
-      setIsFullScreen(!!document.fullscreenElement);
-    };
-
-    document.addEventListener('fullscreenchange', handleFullScreenChange);
-    return () => {
-      document.removeEventListener('fullscreenchange', handleFullScreenChange);
-    };
-  }, []);
 
   if (loadingDetails && loadingEpisodes) {
     return (
@@ -144,7 +85,7 @@ const AnimeDetailPage = () => {
   }
 
   return (
-    <div className={`anime-detail-page ${isFullScreen ? 'fullscreen-active' : ''}`}>
+    <div className="anime-detail-page">
       <div className="detail-header">
         <button onClick={handleGoBack} className="back-button">
           ← Back
@@ -155,55 +96,29 @@ const AnimeDetailPage = () => {
       </div>
 
       <div className="detail-content">
-        <div className={`video-player-section ${isFullScreen ? 'fullscreen' : ''}`} ref={playerContainerRef}>
-          {loadingVideo && (
-            <div className="video-overlay loading-overlay">
-              <div className="spinner"></div>
-              <p>Loading video...</p>
-            </div>
-          )}
-          {videoError && !loadingVideo && (
-            <div className="video-overlay error-overlay">
-              <p>⚠️ {videoError}</p>
-            </div>
-          )}
-          {videoUrl && !loadingVideo && !videoError ? (
-            isYouTubeUrl(videoUrl) ? (
-              <iframe
-                src={videoUrl}
-                title="Anime Trailer"
-                className="anime-video-player"
-                allowFullScreen
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                style={{ width: '100%', height: '100%', border: 'none', minHeight: '400px' }}
-              ></iframe>
-            ) : (
-              <video
-                ref={videoRef}
-                key={videoUrl}
-                controls
-                autoPlay
-                className="anime-video-player"
-                poster={animeDetails?.image}
-                onContextMenu={(e) => e.preventDefault()}
-              >
-                <source src={videoUrl} type="video/mp4" />
-                Your browser does not support the video tag.
-              </video>
-            )
+        <div className="video-player-section">
+          {selectedEpisode ? (
+            <StreamingVideoPlayer
+              animeId={animeId}
+              episodeNumber={selectedEpisode.episodeNumber}
+              animeTitle={animeDetails?.title}
+              onError={(error) => {
+                console.error('Streaming error:', error);
+                setVideoError(`Streaming error: ${error.message}`);
+              }}
+              onQualityChange={(quality) => {
+                console.log(`Quality changed to: ${quality}`);
+              }}
+            />
           ) : (
-            !loadingVideo && !videoError && (
-              <div className="video-placeholder">
-                <p style={{ fontSize: '3rem' }}>▶</p>
-                <p>Select an episode to start watching</p>
-              </div>
-            )
+            <div className="video-placeholder">
+              <p style={{ fontSize: '3rem' }}>▶</p>
+              <p>Select an episode to start watching</p>
+              <p style={{ color: '#888', fontSize: '0.9rem' }}>
+                Episodes will stream using available sources
+              </p>
+            </div>
           )}
-          <div className="player-controls-overlay">
-            <button onClick={handleFullScreenToggle} className="fullscreen-toggle-button">
-              {isFullScreen ? '⊘' : '⊕'}
-            </button>
-          </div>
         </div>
 
         <div className="anime-info-and-episodes">

@@ -5,6 +5,7 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const animeService = require('./utils/animeService');
+const streamingService = require('./utils/streamingService');
 
 const app = express();
 
@@ -138,6 +139,74 @@ app.get(`${API_BASE_PATH}/anime/:animeId/episode/:episodeNumber/stream`, async (
     try {
         const streamInfo = await animeService.fetchStreamInfo(animeId, episodeNumber);
         res.json(streamInfo);
+    } catch (error) {
+        next(error);
+    }
+});
+
+// --- Streaming Endpoints ---
+
+// Search anime for streaming sources
+app.get(`${API_BASE_PATH}/stream/search`, async (req, res, next) => {
+    const { query } = req.query;
+
+    if (!query) {
+        return res.status(400).json({ error: 'Search query is required for streaming search.' });
+    }
+
+    try {
+        const results = await streamingService.searchAnimeForStreaming(query);
+        res.json(results);
+    } catch (error) {
+        next(error);
+    }
+});
+
+// Get streaming URL for episode
+app.get(`${API_BASE_PATH}/stream/:animeId/:episodeNumber`, async (req, res, next) => {
+    const { animeId, episodeNumber } = req.params;
+    const { quality = '720p' } = req.query;
+
+    try {
+        const streamInfo = await streamingService.getEpisodeStream(animeId, episodeNumber);
+        
+        if (!streamInfo.available) {
+            return res.status(404).json({ 
+                message: 'Stream not available for this episode',
+                info: streamInfo.message 
+            });
+        }
+
+        // Return streaming info with requested quality
+        const responseData = {
+            ...streamInfo,
+            requestedQuality: quality,
+            streamUrl: streamInfo.streamUrls[quality] || streamInfo.streamUrls['720p'] || null
+        };
+
+        res.json(responseData);
+    } catch (error) {
+        next(error);
+    }
+});
+
+// Get available streaming qualities
+app.get(`${API_BASE_PATH}/stream/:animeId/:episodeNumber/qualities`, async (req, res, next) => {
+    const { animeId, episodeNumber } = req.params;
+
+    try {
+        const qualities = await streamingService.getAvailableQualities(animeId, episodeNumber);
+        res.json({ qualities });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// Get streaming sources status
+app.get(`${API_BASE_PATH}/stream/sources`, async (req, res, next) => {
+    try {
+        const sources = streamingService.getSources();
+        res.json({ sources });
     } catch (error) {
         next(error);
     }
