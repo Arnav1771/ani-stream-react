@@ -1,23 +1,109 @@
-# Project Overview
-The current project is experiencing errors with the README file and deployment. The README file is not generating correctly, and the deployment is resulting in a 404 error.
+# AniStream React
 
-## Error with README File
-The error message for the README file is as follows:
-429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
-* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
-Please retry in 2.029772756s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.5-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '2s'}]}
+A React-based anime streaming application with a Node.js/Express backend that uses the [Jikan API](https://jikan.moe/) (MyAnimeList) for anime data.
 
-## Deployment Error
-The deployment is currently resulting in a 404 error. This indicates that the requested resource cannot be found.
+## 🚀 **Application Status: FIXED & WORKING** 
 
-## Steps to Resolve Errors
-1. Check the billing details and plan to ensure that the quota for the Gemini API has not been exceeded.
-2. Monitor the current usage of the Gemini API to prevent exceeding the quota in the future.
-3. Investigate the deployment configuration to identify the cause of the 404 error.
-4. Update the deployment configuration to ensure that the requested resource can be found.
+The application is now fully functional! All previous issues have been resolved:
+- ✅ Backend server starts successfully  
+- ✅ Frontend React app builds and serves correctly
+- ✅ API endpoints are working with Jikan API integration
+- ✅ No more 404 errors on root route
+- ✅ No more ani-cli subprocess issues
 
-## Future Updates
-To prevent similar errors in the future, it is recommended to:
-* Monitor the usage of the Gemini API regularly.
-* Update the billing details and plan as needed to ensure that the quota is not exceeded.
-* Regularly review the deployment configuration to ensure that it is correct and up-to-date.
+## Architecture
+
+- **Frontend**: React 18 with React Router for SPA navigation
+- **Backend**: Node.js/Express server that proxies requests to the Jikan API  
+- **Data Source**: [Jikan API v4](https://docs.api.jikan.moe/) (free, no API key required)
+
+## Quick Start
+
+### 1. Install Dependencies
+
+```bash
+# Install server dependencies
+cd server
+npm install
+
+# Install client dependencies 
+cd ../client
+npm install
+```
+
+### 2. Build & Start Application
+
+```bash
+# Build the React frontend
+cd client
+npm run build
+
+# Start the backend server (serves both API and React app)
+cd ../server  
+npm run dev
+
+# Server runs on http://localhost:5000
+```
+
+The application will be available at `http://localhost:5000`
+
+## Development Mode
+
+For development with hot reload:
+
+```bash
+# Terminal 1: Start backend server
+cd server
+npm run dev
+
+# Terminal 2: Start React development server  
+cd client
+npm start
+
+# Backend: http://localhost:5000
+# Frontend: http://localhost:3000
+```
+
+## API Endpoints
+
+| Endpoint | Description |
+|---|---|
+| `GET /api/search?query=<q>` | Search for anime |
+| `GET /api/anime?q=<q>` | Search anime (or trending if no query) |
+| `GET /api/trending` | Get trending anime |
+| `GET /api/recent` | Get recently added anime |
+| `GET /api/anime/:id` | Get anime details |
+| `GET /api/anime/:id/episodes` | Get anime episodes |
+
+## Features
+
+- 🔍 **Search**: Find anime by title
+- 📈 **Trending**: Browse popular anime  
+- 🆕 **Recent**: Discover newly added anime
+- 📺 **Details**: View comprehensive anime information
+- 🎬 **Trailers**: Watch YouTube trailers
+- 📱 **Responsive**: Works on desktop and mobile
+
+## Configuration
+
+Environment variables (`.env` file):
+
+```env
+PORT=5000
+NODE_ENV=development
+REACT_APP_API_BASE_URL=http://localhost:5000/api
+CORS_ORIGIN=http://localhost:3000
+```
+
+## Recent Improvements
+
+The application has been completely modernized:
+- 🔄 **Replaced ani-cli subprocess calls** with direct Jikan REST API integration
+- 🛡️ **Enhanced security** by removing shell execution vulnerabilities  
+- 🌐 **Better reliability** with proper error handling and retry logic
+- 📦 **Simplified deployment** - no external dependencies required
+- ⚡ **Improved performance** with HTTP requests instead of subprocess spawning
+
+## Note on Streaming
+
+This application uses the Jikan API for anime metadata and YouTube trailer URLs. For actual episode streaming, it provides links to official services like Crunchyroll, Funimation, etc.

@@ -3,6 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 const animeService = require('./utils/animeService');
 
 const app = express();
@@ -142,12 +143,39 @@ app.get(`${API_BASE_PATH}/anime/:animeId/episode/:episodeNumber/stream`, async (
     }
 });
 
-// --- Serve React Frontend (in production) ---
-if (NODE_ENV === 'production') {
-    app.use(express.static(path.join(__dirname, '../client/build')));
+// --- Serve React Frontend ---
 
-    app.get('*', (req, res) => {
-        res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
+// Check if build directory exists
+const buildPath = path.join(__dirname, '../client/build');
+
+if (NODE_ENV === 'production' || fs.existsSync(buildPath)) {
+    // Serve static files from React build
+    app.use(express.static(buildPath));
+
+    // Handle React Router - serve index.html for non-API routes  
+    app.get('/', (req, res) => {
+        res.sendFile(path.join(buildPath, 'index.html'));
+    });
+    
+    // Handle React Router routes (but not API routes)
+    app.get(/^(?!\/api).*/, (req, res) => {
+        res.sendFile(path.join(buildPath, 'index.html'));
+    });
+} else {
+    // Development mode without build - provide a simple response
+    app.get('/', (req, res) => {
+        res.json({
+            message: 'AniStream API Server',
+            status: 'Running in development mode',
+            endpoints: {
+                search: '/api/search?query=<anime_name>',  
+                trending: '/api/trending',
+                recent: '/api/recent',
+                animeDetails: '/api/anime/:id',
+                episodes: '/api/anime/:id/episodes'
+            },
+            note: 'Start the React dev server on port 3000 for the frontend'
+        });
     });
 }
 
